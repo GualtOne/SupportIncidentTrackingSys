@@ -8,11 +8,8 @@ namespace SupportIncidentTrackingSys.Interfaces
         ObservableCollection<Incident> Incidents { get; }
         Incident SelectedIncident { get; set; }
 
-        void LoadIncidents();
         void AddIncident(Incident incident);
         void UpdateIncident(Incident incident);
         void DeleteIncident(Incident incident);
-        int GetHashCode();
-        string ToString();
     }
 }

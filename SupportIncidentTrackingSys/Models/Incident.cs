@@ -7,15 +7,17 @@ namespace SupportIncidentTrackingSys.Models
     {
         private int _id;
         private string? _author;
-        private string? _subdivison;
+        private string? _subdivision;
         private string? _category;
         private string? _description;
         private string? _priority;
         private DateTime? _regdate;
         private DateTime? _resptime;
         private DateTime? _decisiondeadline;
-        private string? _responsibale;
+        private string? _responsible;
         private string? _status;
+        private int _responsibleid;
+        private int _createdbyid;
 
         public int Id
         {
@@ -29,10 +31,10 @@ namespace SupportIncidentTrackingSys.Models
             set { _author = value; OnPropertyChanged();}
         }
 
-        public string? Subdivison
+        public string? Subdivision
         {
-            get => _subdivison ?? "Нету";
-            set { _subdivison = value; OnPropertyChanged(); }
+            get => _subdivision ?? "Нету";
+            set { _subdivision = value; OnPropertyChanged(); }
         }
 
         public string? Category
@@ -71,16 +73,28 @@ namespace SupportIncidentTrackingSys.Models
             set { _decisiondeadline = value; OnPropertyChanged(); }
         }
 
-        public string? Responsibale
+        public string? Responsible
         {
-            get => _responsibale ?? "Нету";
-            set { _responsibale = value; OnPropertyChanged(); }
+            get => _responsible ?? "Нету";
+            set { _responsible = value; OnPropertyChanged(); }
         }
 
         public string? Status
         {
             get => _status ?? "Нету";
             set { _status = value; OnPropertyChanged(); }
+        }
+
+        public int ResponsibleId
+        {
+            get => _responsibleid;
+            set { _responsibleid = value; OnPropertyChanged(); }
+        }
+
+        public int CreatedById
+        {
+            get => _createdbyid;
+            set { _createdbyid = value; OnPropertyChanged(); }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

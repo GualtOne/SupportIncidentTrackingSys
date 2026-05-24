@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using SupportIncidentTrackingSys.DBservice;
 using SupportIncidentTrackingSys.Models;
+using SupportIncidentTrackingSys.Role;
 
 namespace SupportIncidentTrackingSys
 {
@@ -12,6 +13,7 @@ namespace SupportIncidentTrackingSys
         public Incident? ResultIncident { get; private set; }
         public ObservableCollection<Priority> Priorities { get; private set; } = [];
         public ObservableCollection<Category> Categories { get; private set; } = [];
+        public ObservableCollection<Subdivision> Subdivisions { get; private set; } = [];
         private Priority? _selectedPriority;
         public Priority? SelectedPriority
         {
@@ -26,17 +28,45 @@ namespace SupportIncidentTrackingSys
             set { _selectedCategory = value; OnPropertyChanged(); }
         }
 
+        private Subdivision? _selectedSubdivision;
+        public Subdivision? SelectedSubdivision
+        {
+            get => _selectedSubdivision;
+            set { _selectedSubdivision = value; OnPropertyChanged(); }
+        }
+
+        public string? resualts;
+
+        private (bool IsValid, string Message) ValidateSelection()
+        {
+            var missing = new List<string>();
+            if (SelectedSubdivision == null) missing.Add("подразделение");
+            if (SelectedPriority == null) missing.Add("приоритет");
+            if (SelectedCategory == null) missing.Add("категорию");
+
+            if (missing.Count == 0) return (true, string.Empty);
+
+            string message = "Выберите " + string.Join(" и ", missing);
+            return (false, message);
+        }
+
         public async Task LoadDataAsync()
         {
             var priorities = await Task.Run(() => DBService.GetAllFrom<Priority>(DBService.tablenameP).ToList() ?? []);
             var categories = await Task.Run(() => DBService.GetAllFrom<Category>(DBService.tablenameC).ToList() ?? []);
+            var subdivisions = await Task.Run(() => DBService.GetAllFrom<Subdivision>(DBService.tablenameSUB).ToList() ?? []);
 
             Application.Current.Dispatcher.Invoke(() =>
             {
                 Priorities.Clear();
-                foreach (var p in priorities) Priorities.Add(p);
+                foreach (var p in priorities)
+                    Priorities.Add(p);
                 Categories.Clear();
-                foreach(var c in categories) Categories.Add(c);
+                foreach (var c in categories)
+                    Categories.Add(c);
+                Subdivisions.Clear();
+                foreach (Subdivision? sub in subdivisions)
+                    Subdivisions.Add(sub);
             });
             IsDataLoaded = true;
         }
@@ -51,7 +81,6 @@ namespace SupportIncidentTrackingSys
         public AddWindow()
         {
             InitializeComponent();
-            Owner = Application.Current.MainWindow;
             DataContext = this;
             Loaded += OnLoaded;
         }
@@ -70,34 +99,41 @@ namespace SupportIncidentTrackingSys
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-
-            if (SelectedPriority == null && SelectedCategory == null)
+            if (AuthService.CurrentUser == null)
             {
-                Messageb.ShowWarning("Выберите приоритет и категорию");
-                return;
-            }
-            else if (SelectedPriority == null)
-            {
-                Messageb.ShowWarning("Выберите приоритет");
-                return;
-            }
-            else if (SelectedCategory == null)
-            {
-                Messageb.ShowWarning("Выберите категорию");
+                Messageb.ShowError("Пользователь не авторизован");
+                DialogResult = false;
+                Close();
                 return;
             }
 
+            var (isValid, message) = ValidateSelection();
+            if (!isValid)
+            {
+                Messageb.ShowWarning(message);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(CommentTextBox.Text))
+            {
+                Messageb.ShowWarning("Введите описание инцидента");
+                return;
+            }
+
+#pragma warning disable CS8602 // Разыменование вероятной пустой ссылки.
             ResultIncident = new Incident
             {
                 Id = 0,
-                Author = AuthorTextBox.Text,
-                Subdivison = SubdivisionTextBox.Text,
+                Author = AuthService.CurrentUser.FullName,
+                Subdivision = SelectedSubdivision.Name,
                 Category = SelectedCategory.Name,
                 Description = CommentTextBox.Text,
                 Priority = SelectedPriority.Name,
                 Regdate = DateTime.Today,
                 Status = "новый",
+                CreatedById = AuthService.CurrentUser.Id,
             };
+#pragma warning restore CS8602 // Разыменование вероятной пустой ссылки.
 
             DialogResult = true;
             Close();

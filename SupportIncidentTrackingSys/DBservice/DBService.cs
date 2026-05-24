@@ -1,7 +1,7 @@
 ﻿using System.IO;
+using System.Xml.Linq;
 using Dapper;
 using Microsoft.Data.Sqlite;
-using SupportIncidentTrackingSys.Interfaces;
 using SupportIncidentTrackingSys.Models;
 
 namespace SupportIncidentTrackingSys.DBservice
@@ -22,11 +22,12 @@ namespace SupportIncidentTrackingSys.DBservice
         public static readonly string tablenameCH = "CommentsHistory";
         public static readonly string tablenameS = "Statuses";
         public static readonly string tablenameSUB = "Subdivision";
+        public static readonly string tablenameUS = "Users";
 
         private static readonly string createQuery = @"
                 CREATE TABLE IF NOT EXISTS Incidents (
 	            Id INTEGER NOT NULL UNIQUE,
-	            Author TEXT NOT NULL,
+	            Author TE[XT NOT NULL,
 	            Subdivision	TEXT NOT NULL,
 	            Category TEXT,
 	            Description TEXT,
@@ -61,10 +62,26 @@ namespace SupportIncidentTrackingSys.DBservice
 	            'StatusName'	TEXT NOT NULL,
 	            PRIMARY KEY('IdStatus' AUTOINCREMENT));";
 
+        private static readonly string createQuerySUB = @"CREATE TABLE 'Subdivision' (
+	            'Id'	INTEGER NOT NULL UNIQUE,
+	            'Name'	TEXT NOT NULL,
+	            PRIMARY KEY('Id' AUTOINCREMENT)
+            );";
+
         private static readonly string createQueryP = @"CREATE TABLE 'Priorities' (
 	            'ID'	INTEGER NOT NULL UNIQUE,
 	            'Name'	TEXT NOT NULL,
 	            PRIMARY KEY('ID' AUTOINCREMENT));";
+
+        private static readonly string createQueryU= @"CREATE TABLE 'Users' (
+	            'Id'	INTEGER NOT NULL UNIQUE,
+	            'Login'	TEXT NOT NULL UNIQUE,
+	            'PasswordHash'	TEXT NOT NULL,
+	            'FullName'	TEXT NOT NULL,
+	            'Role'	TEXT NOT NULL,
+	            'IsActive'	BOOLEAN DEFAULT 1,
+	            PRIMARY KEY('Id' AUTOINCREMENT)
+            );";
 
         private static readonly string insertIntoPrio = @"
                 INSERT INTO Priorities (Name) VALUES('Низкий');
@@ -89,6 +106,15 @@ namespace SupportIncidentTrackingSys.DBservice
                 INSERT INTO Categories (Name) VALUES('Запрос на обслуживание');
                 INSERT INTO Categories (Name) VALUES('Групповые политики и конфигурации');
                 INSERT INTO Categories (Name) VALUES('Инфраструктура');";
+
+        private static readonly string insertIntoSubdivison = @"
+                INSERT INTO Subdivision (Name) VALUES 
+                ('Руководство'),
+                ('Бухгалтерия'),
+                ('Отдел продаж'),
+                ('ИТ-отдел'),
+                ('Отдел кадров'),
+                ('Юридический отдел');";
 
         static DBService()
         {
@@ -116,20 +142,35 @@ namespace SupportIncidentTrackingSys.DBservice
                         CreateTableWithIn(connection, createQueryCategories, insertIntoCategories);
                     if (!TableExists(connection, tablenameCH))
                         CreateTable(connection, createQueryCh);
+                    if (!TableExists(connection, tablenameSUB))
+                        CreateTableWithIn(connection, createQuerySUB, insertIntoSubdivison);
+                    if (!TableExists(connection, tablenameUS))
+                        CreateTable(connection, createQueryU);
                 }
                 else
                 {
-
                     File.Create(filepath).Close();
                     using var connection = new SqliteConnection(connectionString);
-                    connection.Open();
-                    CreateTable(connection, createQuery);
+                    CreateAll(connection);
                 }
             }
             catch (SqliteException ex)
             {
                 Messageb.ShowError($"Ошибка при при подсоединение к SQL серверу {ex.Message}");
             }
+        }
+
+        public static void CreateAll(SqliteConnection connection)
+        {
+            connection.Open();
+            CreateTable(connection, createQuery);
+            CreateTableWithIn(connection, createQueryS, insertIntoStatus);
+            CreateTableWithIn(connection, createQueryS, insertIntoStatus);
+            CreateTableWithIn(connection, createQueryP, insertIntoPrio);
+            CreateTableWithIn(connection, createQueryCategories, insertIntoCategories);
+            CreateTableWithIn(connection, createQuerySUB, insertIntoSubdivison);
+            CreateTable(connection, createQueryU);
+            CreateTable(connection, createQueryCh);
         }
 
         public static bool DataBaseExists()
@@ -181,6 +222,26 @@ namespace SupportIncidentTrackingSys.DBservice
             }
         }
 
+        public static User GetUserByLogin(string login)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(connectionString);
+                const string query = "SELECT * FROM Users WHERE Login = @Login";
+
+                return connection.QueryFirstOrDefault<User>(query, new { Login = login }) ?? new User();
+            }
+            catch (SqliteException ex)
+            {
+                Messageb.ShowError(ex.Message);
+                return new User();
+            }
+            catch (Exception ex)
+            {
+                Messageb.ShowError(ex.Message);
+                return new User();
+            }
+        }
 
         public static void Delete(int Id)
         {
@@ -203,27 +264,96 @@ namespace SupportIncidentTrackingSys.DBservice
             }
         }
 
-        public static void Add(Incident incident)
+        public static void DeleteCommentHistory(int Id)
         {
-            ArgumentNullException.ThrowIfNull(incident);
             try
             {
                 using var connection = new SqliteConnection(connectionString);
                 connection.Open();
-                string query = "INSERT INTO Incidents (Author, Subdivision, Category, Description, Priority, RegistrationDate, ResponseTime, " +
-                    "DecisionDeadline, Responsible, Status) " +
-                    "VALUES (@author, @subdivision, @category, @description, @priority, @registrationDate, @responseTime, @decisionDeadline, @responsible, @status)";
+                string query = "DELETE FROM CommentsHistory WHERE Id = @id;";
+                using var command = new SqliteCommand(query, connection);
+                command.Parameters.AddWithValue("@id", Id);
+                command.ExecuteNonQuery();
+            }
+            catch (SqliteException ex)
+            {
+                Messageb.ShowError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Messageb.ShowError(ex.Message);
+            }
+        }
+
+        public static int Add(Incident incident)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(connectionString);
+                connection.Open();
+                string query = "INSERT INTO Incidents (Author, Subdivision, Category, Description, Priority, RegistrationDate, " +
+                    " Status) " +
+                    "VALUES (@author, @subdivision, @category, @description, @priority, @registrationDate, @status)";
                 using var command = new SqliteCommand(query, connection);
                 command.Parameters.AddWithValue("@author", incident.Author);
-                command.Parameters.AddWithValue("@subdivision", incident.Subdivison);
+                command.Parameters.AddWithValue("@subdivision", incident.Subdivision);
                 command.Parameters.AddWithValue("@category", incident.Category);
                 command.Parameters.AddWithValue("@description", incident.Description);
                 command.Parameters.AddWithValue("@priority", incident.Priority);
                 command.Parameters.AddWithValue("@registrationDate", incident.Regdate);
-                command.Parameters.AddWithValue("@responseTime", incident.ResponseTime);
-                command.Parameters.AddWithValue("@decisionDeadline", incident.DecisionDeadline);
-                command.Parameters.AddWithValue("@responsible", incident.Responsibale);
                 command.Parameters.AddWithValue("@status", incident.Status);
+                command.Parameters.AddWithValue("@createdById", incident.CreatedById);
+                return Convert.ToInt32(command.ExecuteScalar());
+            }
+            catch (SqliteException ex)
+            {
+                Messageb.ShowError(ex.Message);
+                return -1;
+            }
+            catch (Exception ex)
+            {
+                Messageb.ShowError(ex.Message);
+                return -1;
+            }
+        }
+
+        public static void AddCommentHistory(CommentsHistory comment)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(connectionString);
+                connection.Open();
+                string query = "INSERT INTO CommentsHistory (IncidentId, Comment, ActionType, Timestamp) VALUES (@incidentid, @comment, @actiontype, @timestamp)";
+                using var command = new SqliteCommand(query, connection);
+                command.Parameters.AddWithValue("@incidentid", comment.IncidentId);
+                command.Parameters.AddWithValue("@comment", comment.Comment);
+                command.Parameters.AddWithValue("@actiontype", comment.ActionType);
+                command.Parameters.AddWithValue("@timestamp", comment.Timestamp);
+                command.ExecuteNonQuery();
+            }
+            catch (SqliteException ex)
+            {
+                Messageb.ShowError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Messageb.ShowError(ex.Message);
+            }
+        }
+
+        public static void AddUser(User user)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(connectionString);
+                connection.Open();
+                string query = "INSERT INTO Users (Login, PasswordHash, FullName, Role, IsActive) VALUES (@login, @passwordhash, @fullname, @role, @isactive)";
+                using var command = new SqliteCommand(query, connection);
+                command.Parameters.AddWithValue("@login", user.Login);
+                command.Parameters.AddWithValue("@passwordhash", user.PasswordHash);
+                command.Parameters.AddWithValue("@fullname", user.FullName);
+                command.Parameters.AddWithValue("@role", user.Role);
+                command.Parameters.AddWithValue("@isactive", user.IsActive);
                 command.ExecuteNonQuery();
             }
             catch (SqliteException ex)
@@ -238,26 +368,22 @@ namespace SupportIncidentTrackingSys.DBservice
 
         public static void Update(Incident incident)
         {
-            ArgumentNullException.ThrowIfNull(incident);
             try
             {
                 using var connection = new SqliteConnection(connectionString);
                 connection.Open();
                 string query = $"UPDATE Incidents SET Author = @author, Subdivision = @subdivision, Category = @category, Description = @description, " +
-                    $"Priority = @priority, RegistrationDate = @registrationDate, ResponseTime = @responseTime, DecisionDeadline = @decisionDeadline, " +
-                    $"Responsible = @responsible, Status = @status" +
+                    $"Priority = @priority, RegistrationDate = @registrationDate, " +
+                    $"Status = @status" +
                     $" WHERE Id = @id";
                 using var command = new SqliteCommand( query, connection);
                 command.Parameters.AddWithValue("@id", incident.Id);
                 command.Parameters.AddWithValue("@author", incident.Author);
-                command.Parameters.AddWithValue("@subdivision", incident.Subdivison);
+                command.Parameters.AddWithValue("@subdivision", incident.Subdivision);
                 command.Parameters.AddWithValue("@category", incident.Category);
                 command.Parameters.AddWithValue("@description", incident.Description);
                 command.Parameters.AddWithValue("@priority", incident.Priority);
                 command.Parameters.AddWithValue("@registrationDate", incident.Regdate);
-                command.Parameters.AddWithValue("@responseTime", incident.ResponseTime);
-                command.Parameters.AddWithValue("@decisionDeadline", incident.DecisionDeadline);
-                command.Parameters.AddWithValue("@responsible", incident.Responsibale);
                 command.Parameters.AddWithValue("@status", incident.Status);
                 command.ExecuteNonQuery();
             }

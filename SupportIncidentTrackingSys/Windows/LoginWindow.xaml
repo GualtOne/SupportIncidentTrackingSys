@@ -1,0 +1,24 @@
+﻿<Window x:Class="SupportIncidentTrackingSys.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SupportIncidentTrackingSys"
+        mc:Ignorable="d"
+      Title="Окно входа" Height="194" Width="350" MinHeight="194" MinWidth="350"
+      WindowStartupLocation="CenterScreen">
+    <Grid Margin="10">
+        <StackPanel>
+            <TextBlock Text="Ввидите ваш логин:" Margin="0,0,0,5"/>
+            <TextBox x:Name="LoginTextBox" Text="" AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Ввидите пароль:" Margin="0,0,0,5"/>
+            <PasswordBox x:Name="PasswordTextBox" PasswordChar="*" MaxLength="30" Margin="0,0,0,10"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" >
+                <Button Content="Вход" Click="OkButton_Click" Width="62" Margin="0,0,10,0" IsDefault="True" IsEnabled="{Binding IsDataLoaded}"/>
+                <Button Content="Отмена" Click="CancelButton_Click" Width="70" IsCancel="True"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

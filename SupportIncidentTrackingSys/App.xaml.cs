@@ -12,6 +12,18 @@ namespace SupportIncidentTrackingSys
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+            {
+                MessageBox.Show((args.ExceptionObject as Exception)?.Message, "Критическая ошибка");
+                Environment.Exit(1);
+            };
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            Environment.Exit(0);
+            base.OnExit(e);
         }
     }
 

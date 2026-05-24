@@ -1,19 +1,19 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using SupportIncidentTrackingSys.Interfaces;
 using SupportIncidentTrackingSys.DBservice;
+using SupportIncidentTrackingSys.Interfaces;
 using SupportIncidentTrackingSys.Models;
+using SupportIncidentTrackingSys.Role;
 
 namespace SupportIncidentTrackingSys.Views
 {
     public class IncidentsViewModel : INotifyPropertyChanged, IIncident
     {
         private ObservableCollection<Incident>? _incidents;
-
         public ObservableCollection<Incident> Incidents
         {
-            get => _incidents ?? Incidents;
+            get => _incidents ??= [];
             set
             {
                 _incidents = value;
@@ -26,31 +26,86 @@ namespace SupportIncidentTrackingSys.Views
         {
             get => _selectedIncident ?? SelectedIncident;
             set
-            {
-                _selectedIncident = value;
-                OnPropertyChanged();
-            }
+            { _selectedIncident = value; OnPropertyChanged(); }
         }
+
+        private ObservableCollection<CommentsHistory>? _commentsHistory;
+        public ObservableCollection<CommentsHistory> CommentsHistories
+        {
+            get => _commentsHistory ??= [];
+            set { _commentsHistory = value; OnPropertyChanged(); }
+        }
+
+        private CommentsHistory? _selectedCommentsHistory;
+        public CommentsHistory SelectedCommentsHistory
+        {
+            get => (_selectedCommentsHistory ?? SelectedCommentsHistory);
+            set { _selectedCommentsHistory = value; OnPropertyChanged(); }
+        }
+
+        private bool _canEdit;
+        public bool CanEdit { get => _canEdit; set { _canEdit = value; OnPropertyChanged(); } }
+
+        private bool _canDelete;
+        public bool CanDelete { get => _canDelete; set { _canDelete = value; OnPropertyChanged(); } }
+
+        private bool _canAdmin;
+        public bool CanAdmin { get => _canAdmin; set { _canAdmin = value; OnPropertyChanged(); } }
+
+        private bool _canFullAccess;
+        public bool CanFullAccess { get => _canFullAccess; set { _canFullAccess = value; OnPropertyChanged(); } }
 
         public IncidentsViewModel()
         {
             DBService.Connection();
-            LoadIncidents();
+            _ = LoadDataAsync();
+        }
+
+        private async Task LoadDataAsync()
+        {
+            await LoadIncidentsAsync();
+            await LoadCommentHistoryAsync();
+            RefreshPermissions();
+        }
+
+        public async Task LoadIncidentsAsync()
+        {
+            var data = await Task.Run(() => DBService.GetAllFrom<Incident>(DBService.tablename).ToList());
+            Incidents.Clear();
+            foreach (var inc in data) Incidents.Add(inc);
+        }
+
+        public async Task LoadCommentHistoryAsync()
+        {
+            var data = await Task.Run(() => DBService.GetAllFrom<CommentsHistory>(DBService.tablenameCH).ToList());
+            CommentsHistories.Clear();
+            foreach (var ch in data) CommentsHistories.Add(ch);
         }
 
         public void AddIncident(Incident incident)
         {
             if (incident == null) return;
-            DBService.Add(incident);
-            if (Incidents.Count > 0)
-            {
-                incident.Id = Incidents.Last().Id + 1;
-            }
-            else
-            {
-                incident.Id = 1;
-            }
+            int newid = DBService.Add(incident);
+            incident.Id = newid;
             Incidents.Add(incident);
+            CommentsHistory Addcomment = new()
+            {
+                IncidentId = incident.Id,
+                Comment = "Запись добавлена",
+                ActionType = CommentsHistory.ActionTypes.Добавлен.ToString(),
+                Timestamp = DateTime.Now
+            };
+            AddComment(Addcomment);
+        }
+
+        private void AddComment(CommentsHistory Addcomment)
+        {
+            DBService.AddCommentHistory(Addcomment);
+            if (CommentsHistories.Count > 0)
+                Addcomment.Id = CommentsHistories.Last().Id + 1;
+            else
+                Addcomment.Id = 1;
+            CommentsHistories.Add(Addcomment);
         }
 
         public void UpdateIncident(Incident incident)
@@ -63,6 +118,14 @@ namespace SupportIncidentTrackingSys.Views
                 var index = Incidents.IndexOf(existing);
                 Incidents[index] = incident;
             }
+            CommentsHistory Editcomment = new()
+            {
+                IncidentId = incident.Id,
+                Comment = "Запись изменена",
+                ActionType = CommentsHistory.ActionTypes.Изменена.ToString(),
+                Timestamp = DateTime.Now
+            };
+            AddComment(Editcomment);
         }
 
         public void DeleteIncident(Incident incident)
@@ -70,6 +133,14 @@ namespace SupportIncidentTrackingSys.Views
             if (incident == null) return;
             DBService.Delete(incident.Id);
             Incidents.Remove(incident);
+            CommentsHistory comment = new()
+            {
+                IncidentId = incident.Id,
+                Comment = "Запись удалена",
+                ActionType = CommentsHistory.ActionTypes.Удален.ToString(),
+                Timestamp = DateTime.Now
+            };
+            AddComment(comment);
         }
 
 
@@ -78,29 +149,12 @@ namespace SupportIncidentTrackingSys.Views
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        private void LoadIncidents()
+        public void RefreshPermissions()
         {
-            IEnumerable<Incident> data = DBService.GetAllFrom<Incident>(DBService.tablename);
-            if (data != null)
-            {
-                Incidents = new ObservableCollection<Incident>(data);
-            }    
-
-        }
-
-        void IIncident.LoadIncidents()
-        {
-            LoadIncidents();
-        }
-
-        int IIncident.GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-
-        string IIncident.ToString()
-        {
-            return base.ToString() ?? nameof(IncidentsViewModel);
+            CanEdit = AuthService.HasPermission(Permission.Edit);
+            CanDelete = AuthService.HasPermission(Permission.Delete);
+            CanAdmin = AuthService.HasPermission(Permission.Admin);
+            CanFullAccess = AuthService.HasPermission(Permission.FullAccess);
         }
     }
 }

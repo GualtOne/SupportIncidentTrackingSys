@@ -1,0 +1,20 @@
+﻿<Window x:Class="SupportIncidentTrackingSys.StartingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SupportIncidentTrackingSys"
+        mc:Ignorable="d"
+      Title="Окно входа" Height="202" Width="279"
+      WindowStartupLocation="CenterScreen" MinHeight="202" MaxHeight="202" MinWidth="279" MaxWidth="279">
+    <Grid Margin="10">
+        <StackPanel>
+            <Label>Вход:</Label>
+            <Button Content="Вход" Click="LoginButton_Click" Width="62" Margin="0,0,10,0" IsDefault="True"/>
+            <Label>Регистрация:</Label>
+            <Button Content="Регистрация" Click="ReggisterButton_Click" Width="90"/>
+            <Label>Выход:</Label>
+            <Button Content="Выход" Click="Button_Click" Width="60"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -14,5 +14,10 @@ namespace SupportIncidentTrackingSys
         {
             MessageBox.Show(txt, "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+
+        public static void ShowMessage(string txt)
+        {
+            MessageBox.Show(txt, "Сообщение", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 }
