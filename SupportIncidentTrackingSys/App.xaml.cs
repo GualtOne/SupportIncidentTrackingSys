@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Windows;
+using SupportIncidentTrackingSys.DBservice;
 
 namespace SupportIncidentTrackingSys
 {
@@ -12,12 +13,16 @@ namespace SupportIncidentTrackingSys
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
+            DispatcherUnhandledException += (s, args) =>
+            {
+                MessageBox.Show(args.Exception.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                args.Handled = true;
+            };
             AppDomain.CurrentDomain.UnhandledException += (s, args) =>
             {
                 MessageBox.Show((args.ExceptionObject as Exception)?.Message, "Критическая ошибка");
-                Environment.Exit(1);
             };
+            DBService.Connection();
         }
 
         protected override void OnExit(ExitEventArgs e)

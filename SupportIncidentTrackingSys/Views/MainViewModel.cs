@@ -1,14 +1,12 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using SupportIncidentTrackingSys.Interfaces;
-using SupportIncidentTrackingSys.Views;
 
 namespace SupportIncidentTrackingSys.Views
 {
     public class MainViewModel : INotifyPropertyChanged
     {
         public IIncident IncidentsVM { get; }
-        //public IStatisticsViewModel StatisticsVM { get; }
 
         public MainViewModel()
         {

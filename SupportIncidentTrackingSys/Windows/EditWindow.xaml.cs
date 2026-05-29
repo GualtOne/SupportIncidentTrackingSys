@@ -70,7 +70,6 @@ namespace SupportIncidentTrackingSys
             DataContext = this;
             Loaded += OnLoaded;
             _originalIncident = Incident;
-            LoadIncidentData();
         }
 
         private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -78,6 +77,17 @@ namespace SupportIncidentTrackingSys
             try
             {
                 await LoadDataAsync();
+                LoadIncidentData();
+                if (_originalIncident.Status == "в работе")
+                {
+                    CommentTextBox.IsReadOnly = true;
+                    CommentTextBox.IsEnabled = false;
+                }
+                else
+                {
+                    CommentTextBox.IsReadOnly = false;
+                    CommentTextBox.IsEnabled = true;
+                }
             }
             catch (Exception ex)
             {
@@ -133,20 +143,22 @@ namespace SupportIncidentTrackingSys
                 return;
             }
 
-#pragma warning disable CS8602 // Разыменование вероятной пустой ссылки.
             ResultIncident = new Incident
             {
                 Id = _originalIncident.Id,
-                Subdivision = SelectedSubdivision.Name,
-                Category = SelectedCategory.Name,
-                Description = CommentTextBox.Text,
-                Priority = SelectedPriority.Name,
-                Regdate = _originalIncident.Regdate,
                 Author = _originalIncident.Author,
-                CreatedById = _originalIncident.CreatedById,
+                Subdivision = SelectedSubdivision!.Name,
+                Category = SelectedCategory!.Name,
+                Description = CommentTextBox.Text,
+                Priority = SelectedPriority!.Name,
+                RegistrationDate = _originalIncident.RegistrationDate,
+                ResponseTime = _originalIncident.ResponseTime,
+                DecisionDeadline = _originalIncident.DecisionDeadline,
+                Responsible = _originalIncident.Responsible,
                 Status = _originalIncident.Status,
+                CreatedById = _originalIncident.CreatedById,
+                ResponsibleId = _originalIncident.ResponsibleId,
             };
-#pragma warning restore CS8602 // Разыменование вероятной пустой ссылки.
 
             DialogResult = true;
             Close();

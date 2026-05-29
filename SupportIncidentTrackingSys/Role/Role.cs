@@ -39,7 +39,7 @@ namespace SupportIncidentTrackingSys.Role
             if (CurrentUser == null) return false;
             return permission switch
             {
-                Permission.Read => CurrentUser.Role == Role.Согласующий,
+                Permission.Read => CurrentUser.Role != Role.Заявитель,
                 Permission.Write => CurrentUser.Role == Role.Заявитель,
                 Permission.Edit => CurrentUser.Role == Role.АдминистраторМаршрутов,
                 Permission.Delete => CurrentUser.Role == Role.АдминистраторМаршрутов,

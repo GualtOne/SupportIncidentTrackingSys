@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SupportIncidentTrackingSys"
         mc:Ignorable="d"
-        Title="MainWindow" Height="562" Width="1373">
+        Title="Система учета инцидентов техподдержки" Height="562" Width="1373">
     <TabControl Margin="0,0,0,-6">
-        <TabItem Header="Таблица инцедентов" DataContext="{Binding IncidentsVM}">
+        <TabItem Header="Таблица инцидентов" DataContext="{Binding IncidentsVM}">
             <Grid Background="#FFE5E5E5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -20,19 +20,29 @@
 
                 <ToolBar x:Name="MyToolbar" 
                          Grid.Row="1" 
+                         
                          Visibility="Visible">
                     <Button Content="Зарегистрировать инцидент" Click="AddItem_Click" ToolTip="Добавить транзакцию" 
-                            BorderBrush="LightGray" Background="WhiteSmoke" Width="167"/>
+                            BorderBrush="LightGray" Background="WhiteSmoke" Width="167" Margin="5, 0"/>
+                    <Button Content="Составить отчет" Click="Export_Click" ToolTip="Экспорт отчета" 
+                            BorderBrush="LightGray" Background="WhiteSmoke" Width="108" Margin="5, 0"/>
+                    <Label>Поиск:</Label>
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Width="200" Margin="5, 0"/>
+                    <ComboBox ItemsSource="{Binding Statuses}" SelectedItem="{Binding SelectedFilterStatus}" 
+                              DisplayMemberPath="StatusName" Width="150" />
+                    <Button Content="Сбросить" Click="ResetFilter_Click" Margin="10,0,0,0" Width="70" BorderBrush="LightGray" Background="WhiteSmoke"/>
                 </ToolBar>
 
-                <TextBlock Text="Таблица инцедентов:" Grid.Row="0" Margin="0,0,0,5"/>
+                <TextBlock Text="Таблица инцидентов:" Grid.Row="0" Margin="0,0,0,5"/>
                 <DataGrid x:Name="MyDataGrid" 
+                          ContextMenuOpening="MyDataGrid_ContextMenuOpening"
                           Grid.Row="2"
-                          ItemsSource="{Binding Incidents}"
+                          ItemsSource="{Binding IncidentsView}"
                           AutoGenerateColumns="False" 
                           IsReadOnly="True"
                           SelectionMode="Single"
                           SelectionUnit="FullRow"
+                          SelectedItem="{Binding SelectedIncident, Mode=TwoWay}"
                           Margin="5">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
@@ -41,14 +51,14 @@
                         <DataGridTextColumn Header="Категория" Binding="{Binding Category}" Width="130"/>
                         <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="250"/>
                         <DataGridTextColumn Header="Приоритет" Binding="{Binding Priority}" Width="100"/>
-                        <DataGridTextColumn Header="Дата регистрации" Binding="{Binding Regdate, StringFormat='dd.MM.yyyy'}" Width="150"/>
-                        <DataGridTextColumn Header="Срок реакции" Binding="{Binding ResponseTime, StringFormat='dd.MM.yyyy'}" Width="150"/>
-                        <DataGridTextColumn Header="Срок решения" Binding="{Binding DecisionDeadline, StringFormat='dd.MM.yyyy'}" Width="150"/>
+                        <DataGridTextColumn Header="Дата регистрации" Binding="{Binding RegistrationDate, StringFormat='dd.MM.yyyy HH:mm'}" Width="150"/>
+                        <DataGridTextColumn Header="Срок реакции" Binding="{Binding ResponseTime, StringFormat='dd.MM.yyyy HH:mm'}" Width="150"/>
+                        <DataGridTextColumn Header="Срок решения" Binding="{Binding DecisionDeadline, StringFormat='dd.MM.yyyy HH:mm'}" Width="150"/>
                         <DataGridTextColumn Header="Ответственный" Binding="{Binding Responsible}" Width="100"/>
                         <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="*"/>
                     </DataGrid.Columns>
                     <DataGrid.ContextMenu>
-                        <ContextMenu>
+                        <ContextMenu x:Name="IncidentContextMenu">
                             <MenuItem Header="Редактировать" Click="EditItem_Click">
                                 <MenuItem.Style>
                                     <Style TargetType="MenuItem">
@@ -73,8 +83,45 @@
                                     </Style>
                                 </MenuItem.Style>
                             </MenuItem>
+                            <MenuItem Header="Изменить статус" Click="EditStatus_Click">
+                                <MenuItem.Style>
+                                    <Style TargetType="MenuItem">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CanRead}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </MenuItem.Style>
+                            </MenuItem>
+                            <MenuItem Header="Изменить отвественного" Click="EditResponsible_Click">
+                                <MenuItem.Style>
+                                    <Style TargetType="MenuItem">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CanRead}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </MenuItem.Style>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem Header="Прикрепить файл" Click="AddAttachment_Click"/>
+                            <MenuItem Header="Прикреплённые файлы" x:Name="AttachmentsSubMenu">
+                            </MenuItem>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsOverdue}" Value="True">
+                                    <Setter Property="Background" Value="LightCoral"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
                 </DataGrid>
 
                 <Border Grid.Row="3" 
@@ -93,40 +140,35 @@
            IsReadOnly="True"
            SelectionMode="Single"
            SelectionUnit="FullRow"
+           SelectedItem="{Binding SelectedCommentsHistory, Mode=TwoWay}"
            Margin="5">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
-                        <DataGridTextColumn Header="ID инцедента" Binding="{Binding IncidentId}" Width="100"/>
+                        <DataGridTextColumn Header="ID инцидента" Binding="{Binding IncidentId}" Width="100"/>
                         <DataGridTextColumn Header="Тип действия" Binding="{Binding ActionType}" Width="130"/>
-                        <DataGridTextColumn Header="Дата" Binding="{Binding Timestamp, StringFormat='dd.MM.yyyy hh::mm'}" Width="150"/>
+                        <DataGridTextColumn Header="Дата" Binding="{Binding Timestamp, StringFormat='dd.MM.yyyy HH::mm'}" Width="150"/>
                         <DataGridTextColumn Header="Коментарий" Binding="{Binding Comment}" Width="*"/>
                     </DataGrid.Columns>
                     <DataGrid.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Редактировать" Click="EditCommentItem_Click">
+                            <MenuItem Header="Изменить комментарий" Click="EditCommentItem_Click">
                             </MenuItem>
                             <MenuItem Header="Удалить" Click="DeleteCommentItem_Click">
+                                <MenuItem.Style>
+                                    <Style TargetType="MenuItem">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CanAdmin}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </MenuItem.Style>
                             </MenuItem>
-                            <ContextMenu.Style>
-                                <Style TargetType="ContextMenu">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding CanAdmin}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ContextMenu.Style>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
                 </DataGrid>
             </Grid>
-        </TabItem>
-        <TabItem Header="Таблица истории изменения">
-
-        </TabItem>
-        <TabItem Header="Таблица пользователей">
-
         </TabItem>
     </TabControl>
 </Window>

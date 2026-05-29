@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using Microsoft.Win32;
 using SupportIncidentTrackingSys.DBservice;
 using SupportIncidentTrackingSys.Models;
 using SupportIncidentTrackingSys.Role;
@@ -120,20 +121,18 @@ namespace SupportIncidentTrackingSys
                 return;
             }
 
-#pragma warning disable CS8602 // Разыменование вероятной пустой ссылки.
             ResultIncident = new Incident
             {
                 Id = 0,
                 Author = AuthService.CurrentUser.FullName,
-                Subdivision = SelectedSubdivision.Name,
-                Category = SelectedCategory.Name,
+                Subdivision = SelectedSubdivision!.Name,
+                Category = SelectedCategory!.Name,
                 Description = CommentTextBox.Text,
-                Priority = SelectedPriority.Name,
-                Regdate = DateTime.Today,
+                Priority = SelectedPriority!.Name,
+                RegistrationDate = DateTime.Now,
                 Status = "новый",
                 CreatedById = AuthService.CurrentUser.Id,
             };
-#pragma warning restore CS8602 // Разыменование вероятной пустой ссылки.
 
             DialogResult = true;
             Close();

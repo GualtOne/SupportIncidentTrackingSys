@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SupportIncidentTrackingSys"
         mc:Ignorable="d"
-      Title="Окно входа" Height="202" Width="279"
-      WindowStartupLocation="CenterScreen" MinHeight="202" MaxHeight="202" MinWidth="279" MaxWidth="279">
+      Title="Выберите действие" Height="202" Width="322" ResizeMode="NoResize"
+      WindowStartupLocation="CenterScreen">
     <Grid Margin="10">
         <StackPanel>
             <Label>Вход:</Label>

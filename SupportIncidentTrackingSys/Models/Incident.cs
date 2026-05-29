@@ -22,7 +22,7 @@ namespace SupportIncidentTrackingSys.Models
         public int Id
         {
             get => _id;
-            set { _id = value; OnPropertyChanged();}
+            set { _id = value; OnPropertyChanged(); }
         }
 
         public string? Author
@@ -52,10 +52,15 @@ namespace SupportIncidentTrackingSys.Models
         public string? Priority
         {
             get => _priority ?? "Нету";
-            set { _priority = value; OnPropertyChanged(); }
+            set 
+            { 
+                _priority = value; 
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsOverdue));
+            }
         }
 
-        public DateTime? Regdate
+        public DateTime? RegistrationDate
         {
             get => _regdate;
             set { _regdate = value; OnPropertyChanged(); }
@@ -64,7 +69,12 @@ namespace SupportIncidentTrackingSys.Models
         public DateTime? ResponseTime
         {
             get => _resptime;
-            set { _resptime = value; OnPropertyChanged(); }
+            set 
+            { 
+                _resptime = value; 
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsOverdue));
+            }
         }
 
         public DateTime? DecisionDeadline
@@ -82,7 +92,13 @@ namespace SupportIncidentTrackingSys.Models
         public string? Status
         {
             get => _status ?? "Нету";
-            set { _status = value; OnPropertyChanged(); }
+            set 
+            { 
+                _status = value; 
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsOverdue));
+                OnPropertyChanged(nameof(IsRejected));
+            }
         }
 
         public int ResponsibleId
@@ -97,8 +113,33 @@ namespace SupportIncidentTrackingSys.Models
             set { _createdbyid = value; OnPropertyChanged(); }
         }
 
+        public bool IsOverdue => IsRealyOverdue();
+
+        public bool IsRejected => Status == "отклонен";
+
+        private bool IsRealyOverdue()
+        {
+            if (Status == "закрыт" || Status == "решен" || Status == "отклонен")
+                return false;
+
+            if (!ResponseTime.HasValue)
+                return false;
+
+            int hours = Priority switch
+            {
+                "Низкий" => 24,
+                "Средний" => 8,
+                "Высокий" => 4,
+                "Критический" => 1,
+                _ => 0
+            };
+
+            DateTime deadline = ResponseTime.Value.AddHours(hours);
+            return DateTime.Now > deadline;
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
+        public void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

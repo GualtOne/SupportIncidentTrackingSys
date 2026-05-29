@@ -1,0 +1,22 @@
+﻿<Window x:Class="SupportIncidentTrackingSys.Windows.AddResponsibleWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SupportIncidentTrackingSys.Windows"
+        mc:Ignorable="d"
+        Title="Изменение отвественного" Height="160" Width="350" MinHeight="160">
+    <Grid Margin="10">
+        <StackPanel>
+            <TextBlock Text="Сотрудники:" Margin="0,0,0,5"/>
+            <ComboBox Margin="0,0,0,15" x:Name="StatusComboBox" ItemsSource="{Binding Users}" 
+                      IsEditable="False" DisplayMemberPath="FullName" 
+                      SelectedItem="{Binding SelectedUser}"  />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" >
+                <Button Content="Изменить" Click="OkButton_Click" Width="127" Margin="0,0,10,0" IsDefault="True" IsEnabled="True"/>
+                <Button Content="Отмена" Click="CancelButton_Click" Width="70" IsCancel="True"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>
