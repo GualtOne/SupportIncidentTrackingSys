@@ -26,6 +26,8 @@
                             BorderBrush="LightGray" Background="WhiteSmoke" Width="167" Margin="5, 0"/>
                     <Button Content="Составить отчет" Click="Export_Click" ToolTip="Экспорт отчета" 
                             BorderBrush="LightGray" Background="WhiteSmoke" Width="108" Margin="5, 0"/>
+                    <Button Content="Составить отчет комментариев" Click="ExportComment_Click" ToolTip="Экспорт отчета по коментариям выбраного инцидента" 
+                            BorderBrush="LightGray" Background="WhiteSmoke" Width="190"/>
                     <Label>Поиск:</Label>
                     <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Width="200" Margin="5, 0"/>
                     <ComboBox ItemsSource="{Binding Statuses}" SelectedItem="{Binding SelectedFilterStatus}" 

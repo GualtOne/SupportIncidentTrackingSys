@@ -1,5 +1,5 @@
-﻿using SupportIncidentTrackingSys.Models;
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
+using SupportIncidentTrackingSys.Models;
 
 namespace SupportIncidentTrackingSys.Report
 {
@@ -9,7 +9,7 @@ namespace SupportIncidentTrackingSys.Report
         {
 
             using var workbook = new XLWorkbook();
-            var worksheet = workbook.Worksheets.Add("Incidences");
+            var worksheet = workbook.Worksheets.Add("Incidents");
 
             worksheet.Cell(1, 1).Value = "ID";
             worksheet.Cell(1, 2).Value = "Автор";
@@ -42,6 +42,32 @@ namespace SupportIncidentTrackingSys.Report
 
             worksheet.Columns().AdjustToContents();
             workbook.SaveAs(filePath);
+        }
+
+        public static void ExportCommentToExcel(IEnumerable<CommentsHistory> comments, string filepath) 
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("CommentsHistory");
+
+            worksheet.Cell(1, 1).Value = "ID";
+            worksheet.Cell(1, 2).Value = "ID инцидента";
+            worksheet.Cell(1, 3).Value = "Тип действия";
+            worksheet.Cell(1, 4).Value = "Дата";
+            worksheet.Cell(1, 5).Value = "Коментарий";
+
+            int row = 2;
+            foreach (var commnet in comments)
+            {
+                worksheet.Cell(row, 1).Value = commnet.Id;
+                worksheet.Cell(row, 2).Value = commnet.IncidentId;
+                worksheet.Cell(row, 3).Value = commnet.ActionType;
+                worksheet.Cell(row, 4).Value = commnet.Timestamp?.ToString("dd.MM.yyyy HH:mm");
+                worksheet.Cell(row, 5).Value = commnet.Comment;
+                row++;
+            }
+
+            worksheet.Columns().AdjustToContents();
+            workbook.SaveAs(filepath);
         }
     }
 }

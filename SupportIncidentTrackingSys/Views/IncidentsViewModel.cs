@@ -176,7 +176,6 @@ namespace SupportIncidentTrackingSys.Views
         {
             DBService.Connection();
             _ = LoadDataAsync();
-            RefreshPermissions();
         }
 
         private async Task LoadDataAsync()
@@ -257,15 +256,6 @@ namespace SupportIncidentTrackingSys.Views
         public void DeleteIncident(Incident incident)
         {
             if (incident == null) return;
-
-            CommentsHistory comment = new()
-            {
-                IncidentId = incident.Id,
-                Comment = "Запись удалена",
-                ActionType = CommentsHistory.ActionTypes.Удален.ToString(),
-                Timestamp = DateTime.Now
-            };
-            DBService.AddCommentHistory(comment);
             DBService.Delete(incident.Id);
             Incidents.Remove(incident);
 

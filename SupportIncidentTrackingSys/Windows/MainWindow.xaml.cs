@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using SupportIncidentTrackingSys.DBservice;
 using SupportIncidentTrackingSys.Interfaces;
 using SupportIncidentTrackingSys.Models;
 using SupportIncidentTrackingSys.Views;
@@ -126,6 +127,21 @@ namespace SupportIncidentTrackingSys
             }
         }
 
+        private void ExportComment_Click(object sender, RoutedEventArgs e)
+        {
+            if (MyDataGrid.SelectedItem is not Incident selected) return;
+            var dialog = new SaveFileDialog { Filter = "Excel files|*.xlsx", DefaultExt = "xlsx" };
+            if (IncidentsVM != null && selected != null)
+            {
+                if (dialog.ShowDialog() == true)
+                {
+                    if (!string.IsNullOrEmpty(dialog.FileName) && IncidentsVM != null)
+                        Report.ReportSystem.ExportCommentToExcel(DBService.GetCommentsByIncidentId(selected.Id), dialog.FileName);
+                    Messageb.ShowMessage("Отчет сохранен");
+                }
+            }
+        }
+
         private void EditResponsible_Click(object sender, RoutedEventArgs e)
         {
             if (MyDataGrid.SelectedItem is not Incident selected) return;
@@ -146,8 +162,6 @@ namespace SupportIncidentTrackingSys
             }
 
         }
-
-
 
         private async void AddAttachment_Click(object sender, RoutedEventArgs e)
         {
